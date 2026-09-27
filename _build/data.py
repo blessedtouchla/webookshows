@@ -263,7 +263,7 @@ ACTS = [
    'His over-the-top humor and D12-era hits make for an unpredictable, high-energy set.',
   ],
   'songs': ['Rockstar', 'Purple Pills (D12)', 'My Band (D12)'],
-  'video': yt('p0HsEFkDwUo', 'Bizarre - Love Tap (official video)'),
+  'video': yt('FI-2NT0cnYY', 'Bizarre - Rockstar (official music video)'),
   'socials': [('Instagram','https://www.instagram.com/bizarresworld/'),('YouTube','https://www.youtube.com/@itsbizarresworld')],
   'good': ['venues','festivals','after'],
  },
