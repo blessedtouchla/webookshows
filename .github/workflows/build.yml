@@ -1,0 +1,41 @@
+name: Build site
+
+# Regenerates every HTML page (home, roster, 17 artist profiles, forms, about,
+# privacy, 404, sitemap) from _build/data.py + js/config.js and commits them.
+on:
+  push:
+    branches: [main]
+    paths: ["_build/**", "js/config.js", "img/**", ".github/workflows/build.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: site-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet "pillow>=11"
+      - name: Build pages
+        run: WBS_OUT=. python3 _build/build.py
+      - name: Commit generated pages
+        run: |
+          git config user.name "webookshows-build-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes."
+          else
+            git commit -m "build: regenerate pages"
+            git pull --rebase origin main
+            git push
+          fi
