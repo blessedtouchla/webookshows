@@ -251,6 +251,23 @@ ACTS = [
   'featured': True,
  },
  {
+  'slug': 'e-40', 'name': 'E-40',
+  'since': '1986',
+  'photo': 'e-40', 'pos': '50% 30%',
+  'region': 'Vallejo, CA (Bay Area)',
+  'genre': 'Bay Area hip-hop, hyphy',
+  'bio': [
+   'E-40 is a Vallejo original who founded Sick Wid It Records in 1989 and came up with his family group the Click before going solo.',
+   'His 1995 album In a Major Way broke him nationally, and "Tell Me When to Go" and "U and Dat" (with T-Pain and Kandi Girl) powered My Ghetto Report Card to No. 3 on the Billboard 200 in 2006.',
+   'With 27 studio albums, the hyphy movement and Mount Westmore with Snoop Dogg, Ice Cube and Too Short to his name, he is a true Bay Area legend and a headliner for festivals, casinos and big rooms.',
+  ],
+  'songs': ['Tell Me When to Go (feat. Keak da Sneak)', 'U and Dat (feat. T-Pain & Kandi Girl)', 'Choices (Yup)', 'Snap Yo Fingers (Lil Jon feat. E-40 & Sean P)'],
+  'video': yt('2GZbaXdK8Js', 'E-40 - Tell Me When To Go (official music video, Warner Records)'),
+  'socials': [('Website','https://e-40.com/'),('YouTube','https://www.youtube.com/@E40TV')],
+  'good': ['festivals','casinos','venues','cultural','after'],
+  'featured': True,
+ },
+ {
   'slug': 'bizarre', 'name': 'Bizarre', 'show': 'Built for Destruction Tour',
   'since': '1995',
   'photo': 'bizarre', 'pos': '50% 30%',
