@@ -16,11 +16,19 @@ PHONE_HTML = (f'<span class="js-phone-who">Bookings: {html.escape(WHO)},</span> 
 
 def rel(depth): return '../' * depth
 
-def page(path, title, desc, body, depth, og_image='img/og.jpg', active=''):
+def page(path, title, desc, body, depth, og_image='img/og.jpg', active='', canon_path=None):
     r = rel(depth)
-    canon = SITE + '/' + (path.replace('index.html', '') if path != 'index.html' else '')
+    # index.html can use an empty href. Any other root file (get-booked.html, 404) must
+    # point home at "/", or the logo and Home link stay on the current page.
+    home_href = r if r or path == 'index.html' else '/'
+    if canon_path is None:
+        canon = SITE + '/' + (path.replace('index.html', '') if path != 'index.html' else '')
+    else:
+        canon = SITE + '/' + canon_path.strip('/')
     nav = [('', 'Home', 'home'), ('roster/', 'Roster', 'roster'), ('about/', 'About', 'about')]
-    navhtml = ''.join(f'<a href="{r}{h}"{" aria-current=\"page\"" if k==active else ""}>{t}</a>' for h,t,k in nav)
+    def nav_href(h):
+        return home_href if h == '' else r + h
+    navhtml = ''.join(f'<a href="{nav_href(h)}"{" aria-current=\"page\"" if k==active else ""}>{t}</a>' for h,t,k in nav)
     doc = f'''<!doctype html>
 <html lang="en">
 <head>
@@ -50,7 +58,7 @@ def page(path, title, desc, body, depth, og_image='img/og.jpg', active=''):
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header">
   <div class="wrap bar">
-    <a class="logo" href="{r}" aria-label="{BRAND} home"><span class="logo-mark" aria-hidden="true">WB</span><span class="logo-text">We Book <b>Shows</b></span></a>
+    <a class="logo" href="{home_href}" aria-label="{BRAND} home"><span class="logo-mark" aria-hidden="true">WB</span><span class="logo-text">We Book <b>Shows</b></span></a>
     <nav class="nav" aria-label="Main">{navhtml}<a class="btn btn-sm" href="{r}book/">Book a show</a></nav>
   </div>
 </header>
@@ -60,7 +68,7 @@ def page(path, title, desc, body, depth, og_image='img/og.jpg', active=''):
 <footer class="site-footer">
   <div class="wrap foot">
     <div>
-      <a class="logo" href="{r}"><span class="logo-mark" aria-hidden="true">WB</span><span class="logo-text">We Book <b>Shows</b></span></a>
+      <a class="logo" href="{home_href}"><span class="logo-mark" aria-hidden="true">WB</span><span class="logo-text">We Book <b>Shows</b></span></a>
       <p class="muted small">Talent booking for casinos, festivals, venues, hotel bars, hemp fests, cultural &amp; business events, and official after-parties.</p>
     </div>
     <nav class="foot-links" aria-label="Footer">
@@ -73,6 +81,7 @@ def page(path, title, desc, body, depth, og_image='img/og.jpg', active=''):
       <p class="js-phone-row"{{PHONE_HIDDEN}}>{{PHONE_HTML}}</p>
       <p><a class="js-email" data-show href="{{MAILTO}}">{{EMAIL_TXT}}</a></p>
       <p class="muted"><a class="quiet" href="{r}join/">Artists: want to join the roster?</a></p>
+      <p class="muted"><a class="quiet" href="{r}get-booked.html">Get booked (indie artists)</a></p>
     </div>
   </div>
   <div class="wrap small muted legal">&copy; <span class="js-year">2026</span> {BRAND}. Artist names, photos and videos belong to their respective owners. Fees quoted per date. Availability on request.</div>
@@ -310,13 +319,13 @@ def field(name, label, typ='text', req=False, opts=None, ph='', auto='', full=Fa
     a = f' autocomplete="{auto}"' if auto else ''
     return f'<div class="{cls}"><label for="{name}">{label}{star}</label><input id="{name}" name="{name}" type="{typ}" placeholder="{e(ph)}"{a}{rq}{hid}>{hl}</div>'
 
-def form_shell(kind, subject, inner, submit):
+def form_shell(kind, subject, inner, submit, privacy='../privacy/'):
     return f'''<form class="form js-form" data-kind="{kind}" data-subject="{e(subject)}" novalidate>
   <div class="hp" aria-hidden="true"><label>Leave this empty <input type="text" name="_honey" tabindex="-1" autocomplete="off"></label></div>
   <div class="form-grid">{inner}</div>
   <p class="form-actions"><button class="btn" type="submit">{submit}</button></p>
   <p class="form-status" role="status" aria-live="polite"></p>
-  <p class="muted small">By sending this form you agree to our <a href="../privacy/">privacy notice</a>. We only use your details to reply.</p>
+  <p class="muted small">By sending this form you agree to our <a href="{privacy}">privacy notice</a>. We only use your details to reply.</p>
 </form>'''
 
 def book():
@@ -381,6 +390,55 @@ def join():
 </section>'''
     page('join/index.html', f'Artists: join the roster | {BRAND}', 'Artists and managers: submit your act to be considered for the We Book Shows roster.', body, 1)
 
+# Show types an indie artist can ask for. Labels only: no fees or prices.
+INDIE_SHOW_TYPES = [
+    'Clubs',
+    'Festivals',
+    'Private events',
+    'Opening slots',
+    'Casinos',
+    'Hotel bars & lounges',
+    'Other',
+]
+
+def get_booked():
+    checks = ''.join(
+        f'<label class="check"><input type="checkbox" name="show_types" value="{e(t)}"> <span>{e(t)}</span></label>'
+        for t in INDIE_SHOW_TYPES
+    )
+    inner = ''.join([
+        field('name', 'Your name', req=True, auto='name'),
+        field('artist_name', 'Artist name', req=True),
+        field('email', 'Email', typ='email', req=True, auto='email'),
+        field('city', 'City / region', req=True, auto='address-level2', ph='e.g. Oakland, CA'),
+        field('genre', 'Genre', req=True, ph='e.g. hip-hop, R&B, rock'),
+        field('links', 'Links (music + socials)', typ='textarea', req=True, full=True, ph='Spotify, YouTube, Instagram, website: one per line'),
+        f'<fieldset class="field full"><legend>Show types wanted <span class="muted small">(choose any)</span></legend><div class="checks checks-short">{checks}</div></fieldset>',
+        field('fee_range', 'Expected fee / budget range', req=True, full=True, ph='Describe the range you look for on a paid booking', help='Kept private. We never publish fees or rates.'),
+        field('availability', 'Availability notes', typ='textarea', full=True, ph='Cities you can reach, days you are free, or dates to avoid.'),
+    ])
+    body = f'''<section class="page-head">
+  <div class="wrap narrow">
+    <p class="eyebrow">Indie artists</p>
+    <h1>Get booked</h1>
+    <p class="lead">For independent artists who want paid bookings. We Book Shows reviews submissions and reaches out when there's a fit. Paid gigs only.</p>
+  </div>
+</section>
+<section class="section pt0">
+  <div class="wrap narrow">
+    {form_shell('indie', 'Indie artist submission: webookshows.com', inner, 'Send submission', privacy='privacy/')}
+    <p class="muted small alt-contact">Prefer email? Write to <a class="js-email" data-show href="{{MAILTO}}">{{EMAIL_TXT}}</a>.</p>
+  </div>
+</section>'''
+    page(
+        'get-booked.html',
+        f'Get booked: indie artist submissions | {BRAND}',
+        'Independent artists: submit your music for paid bookings. We Book Shows reviews submissions and reaches out when there is a fit. Paid gigs only.',
+        body,
+        0,
+        canon_path='get-booked',
+    )
+
 def about():
     r = rel(1)
     body = f'''<section class="page-head">
@@ -416,7 +474,7 @@ def privacy():
 <section class="section pt0">
   <div class="wrap narrow prose">
     <h2>What we collect</h2>
-    <p>We only collect what you choose to send us through our booking and artist-submission forms or by email: typically your name, company or venue, contact details, event details, and any links or notes you include.</p>
+    <p>We only collect what you choose to send us through our booking and artist-submission forms or by email: typically your name, artist or company, contact details, city or region, event or show details, links, and any notes you include. An indie-artist submission can also include the fee range you hope to earn. We never publish fees, rates, or prices.</p>
     <h2>How we use it</h2>
     <p>We use your details to reply to your inquiry, check artist availability, and prepare offers. We share event details with an artist's team only as needed to answer your inquiry. We don't sell your information or add you to marketing lists.</p>
     <h2>Form processing</h2>
@@ -435,12 +493,12 @@ def notfound():
     # 404 must use root-absolute assets
     p = os.path.join(ROOT, '404.html'); s = open(p).read()
     s = s.replace('href="css/', 'href="/css/').replace('src="js/', 'src="/js/').replace('href="img/', 'href="/img/').replace('href=""', 'href="/"')
-    for h in ['roster/','about/','book/','privacy/','join/']:
+    for h in ['roster/','about/','book/','privacy/','join/','get-booked.html']:
         s = s.replace(f'href="{h}"', f'href="/{h}"')
     open(p,'w').write(s)
 
 def sitemap():
-    urls = ['', 'roster/', 'book/', 'about/', 'join/', 'privacy/'] + [f'artists/{a["slug"]}/' for a in ACTS]
+    urls = ['', 'roster/', 'book/', 'about/', 'join/', 'get-booked', 'privacy/'] + [f'artists/{a["slug"]}/' for a in ACTS]
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + ''.join(f'  <url><loc>{SITE}/{u}</loc></url>\n' for u in urls) + '</urlset>\n'
     open(os.path.join(ROOT,'sitemap.xml'),'w').write(xml)
     open(os.path.join(ROOT,'robots.txt'),'w').write(f'User-agent: *\nAllow: /\nSitemap: {SITE}/sitemap.xml\n')
@@ -470,6 +528,6 @@ def og_fallback():
 
 if __name__ == '__main__':
     og_fallback()
-    home(); roster(); book(); join(); about(); privacy(); notfound(); sitemap()
+    home(); roster(); book(); join(); get_booked(); about(); privacy(); notfound(); sitemap()
     for a in ACTS: profile(a)
     print('built', len(ACTS), 'profiles')

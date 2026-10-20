@@ -102,6 +102,7 @@
   $all("form.js-form").forEach(function (form) {
     var status = form.querySelector(".form-status");
     var btn = form.querySelector('button[type="submit"]');
+    var idleLabel = btn ? btn.textContent : "Send";
     form.addEventListener("submit", function (ev) {
       ev.preventDefault();
       status.className = "form-status";
@@ -158,7 +159,7 @@
           status.appendChild(a);
           status.appendChild(document.createTextNode(" (your details are pre-filled)."));
         })
-        .then(function () { btn.disabled = false; btn.textContent = form.getAttribute("data-kind") === "artist" ? "Send submission" : "Send inquiry"; });
+        .then(function () { btn.disabled = false; btn.textContent = idleLabel; });
     });
   });
 })();

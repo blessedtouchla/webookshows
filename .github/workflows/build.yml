@@ -1,7 +1,8 @@
 name: Build site
 
-# Regenerates every HTML page (home, roster, 17 artist profiles, forms, about,
-# privacy, 404, sitemap) from _build/data.py + js/config.js and commits them.
+# Regenerates every HTML page (home, roster, artist profiles, book / roster /
+# indie forms, about, privacy, 404, sitemap) from _build/data.py + js/config.js
+# and commits them.
 on:
   push:
     branches: [main]
