@@ -88,14 +88,25 @@
     }
     return el && el.firstChild ? el.firstChild.textContent.trim() : name;
   }
-  function mailtoHref(form, subject, payload) {
-    var lines = payload.order.map(function (k) { return labelFor(form, k) + ": " + (payload.data[k] || "-"); });
-    return "mailto:" + EMAIL + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(lines.join("\n") + "\n\n(Sent from webookshows.com)");
+  function isEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s || ""); }
+  function formEmail(form) {
+    var to = (form.getAttribute("data-to") || "").trim();
+    return isEmail(to) ? to : EMAIL;
   }
-  function endpoint() {
+  function mailtoHref(form, subject, payload, to) {
+    var lines = payload.order.map(function (k) { return labelFor(form, k) + ": " + (payload.data[k] || "-"); });
+    return "mailto:" + to + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(lines.join("\n") + "\n\n(Sent from webookshows.com)");
+  }
+  function endpoint(to) {
     var p = (C.FORM_PROVIDER || "mailto").toLowerCase();
-    if (p === "formsubmit" && validEmail) return { url: "https://formsubmit.co/ajax/" + encodeURIComponent(C.FORMSUBMIT_ALIAS || EMAIL), kind: p };
-    if (p === "formspree" && C.FORMSPREE_ID) return { url: "https://formspree.io/f/" + encodeURIComponent(C.FORMSPREE_ID), kind: p };
+    var custom = to !== EMAIL;
+    if (p === "formsubmit") {
+      var dest = custom ? to : ((C.FORMSUBMIT_ALIAS || "").trim() || EMAIL);
+      if (custom ? isEmail(dest) : (dest && ((C.FORMSUBMIT_ALIAS || "").trim() || validEmail))) {
+        return { url: "https://formsubmit.co/ajax/" + encodeURIComponent(dest), kind: p };
+      }
+    }
+    if (p === "formspree" && C.FORMSPREE_ID && !custom) return { url: "https://formspree.io/f/" + encodeURIComponent(C.FORMSPREE_ID), kind: p };
     return null;
   }
 
@@ -123,11 +134,12 @@
 
       var subject = form.getAttribute("data-subject") || "Website inquiry";
       var payload = collect(form);
-      var ep = endpoint();
+      var to = formEmail(form);
+      var ep = endpoint(to);
 
       if (!ep) {
-        if (!validEmail) { status.textContent = "Our inbox isn't set up yet. Please check back soon."; status.classList.add("err"); return; }
-        window.location.href = mailtoHref(form, subject, payload);
+        if (!isEmail(to)) { status.textContent = "Our inbox isn't set up yet. Please check back soon."; status.classList.add("err"); return; }
+        window.location.href = mailtoHref(form, subject, payload, to);
         status.textContent = "Opening your email app. Just press send.";
         return;
       }
@@ -153,7 +165,7 @@
           status.innerHTML = "";
           status.classList.add("err");
           var a = document.createElement("a");
-          a.href = mailtoHref(form, subject, payload);
+          a.href = mailtoHref(form, subject, payload, to);
           a.textContent = "send it by email instead";
           status.appendChild(document.createTextNode("We couldn't send that just now. Please "));
           status.appendChild(a);

@@ -9,6 +9,7 @@ e = html.escape
 import re as _re
 _cfg = open(os.path.join(ROOT, 'js', 'config.js')).read()
 EMAIL = (_re.search(r'CONTACT_EMAIL:\s*"([^"]*)"', _cfg) or [None, ''])[1]
+INDIE_EMAIL = (_re.search(r'INDIE_CONTACT_EMAIL:\s*"([^"]*)"', _cfg) or [None, ''])[1]
 PHONE = (_re.search(r'CONTACT_PHONE:\s*"([^"]*)"', _cfg) or [None, ''])[1]
 TEL = (_re.search(r'CONTACT_PHONE_TEL:\s*"([^"]*)"', _cfg) or [None, ''])[1]
 WHO = (_re.search(r'BOOKING_CONTACT_NAME:\s*"([^"]*)"', _cfg) or [None, ''])[1]
@@ -16,7 +17,7 @@ PHONE_HTML = (f'<span class="js-phone-who">Bookings: {html.escape(WHO)},</span> 
 
 def rel(depth): return '../' * depth
 
-def page(path, title, desc, body, depth, og_image='img/og.jpg', active='', canon_path=None):
+def page(path, title, desc, body, depth, og_image='img/og.jpg', active='', canon_path=None, contact_email=None):
     r = rel(depth)
     # index.html can use an empty href. Any other root file (get-booked.html, 404) must
     # point home at "/", or the logo and Home link stay on the current page.
@@ -25,6 +26,10 @@ def page(path, title, desc, body, depth, og_image='img/og.jpg', active='', canon
         canon = SITE + '/' + (path.replace('index.html', '') if path != 'index.html' else '')
     else:
         canon = SITE + '/' + canon_path.strip('/')
+    shown_email = contact_email or EMAIL
+    # A page-specific inbox is written into the HTML and left alone at runtime.
+    # The site inbox keeps js-email so config.js can refresh every other page.
+    email_attr = '' if contact_email else 'class="js-email" data-show '
     nav = [('', 'Home', 'home'), ('roster/', 'Roster', 'roster'), ('about/', 'About', 'about')]
     def nav_href(h):
         return home_href if h == '' else r + h
@@ -79,7 +84,7 @@ def page(path, title, desc, body, depth, og_image='img/og.jpg', active='', canon
     </nav>
     <div class="small">
       <p class="js-phone-row"{{PHONE_HIDDEN}}>{{PHONE_HTML}}</p>
-      <p><a class="js-email" data-show href="{{MAILTO}}">{{EMAIL_TXT}}</a></p>
+      <p><a {email_attr}href="{{MAILTO}}">{{EMAIL_TXT}}</a></p>
       <p class="muted"><a class="quiet" href="{r}join/">Artists: want to join the roster?</a></p>
       <p class="muted"><a class="quiet" href="{r}get-booked.html">Get booked (indie artists)</a></p>
     </div>
@@ -90,7 +95,7 @@ def page(path, title, desc, body, depth, og_image='img/og.jpg', active='', canon
 </html>
 '''
     doc = doc.replace('{PHONE_HTML}', PHONE_HTML).replace('{PHONE_HIDDEN}', '' if PHONE else ' hidden')
-    doc = doc.replace('{MAILTO}', ('mailto:' + EMAIL) if EMAIL else r + 'about/#contact').replace('{EMAIL_TXT}', e(EMAIL) if EMAIL else 'Email coming soon')
+    doc = doc.replace('{MAILTO}', ('mailto:' + shown_email) if shown_email else r + 'about/#contact').replace('{EMAIL_TXT}', e(shown_email) if shown_email else 'Email coming soon')
     out = os.path.join(ROOT, path)
     os.makedirs(os.path.dirname(out), exist_ok=True)
     open(out, 'w').write(doc)
@@ -319,8 +324,9 @@ def field(name, label, typ='text', req=False, opts=None, ph='', auto='', full=Fa
     a = f' autocomplete="{auto}"' if auto else ''
     return f'<div class="{cls}"><label for="{name}">{label}{star}</label><input id="{name}" name="{name}" type="{typ}" placeholder="{e(ph)}"{a}{rq}{hid}>{hl}</div>'
 
-def form_shell(kind, subject, inner, submit, privacy='../privacy/'):
-    return f'''<form class="form js-form" data-kind="{kind}" data-subject="{e(subject)}" novalidate>
+def form_shell(kind, subject, inner, submit, privacy='../privacy/', to=''):
+    to_attr = f' data-to="{e(to)}"' if to else ''
+    return f'''<form class="form js-form" data-kind="{kind}" data-subject="{e(subject)}"{to_attr} novalidate>
   <div class="hp" aria-hidden="true"><label>Leave this empty <input type="text" name="_honey" tabindex="-1" autocomplete="off"></label></div>
   <div class="form-grid">{inner}</div>
   <p class="form-actions"><button class="btn" type="submit">{submit}</button></p>
@@ -426,8 +432,8 @@ def get_booked():
 </section>
 <section class="section pt0">
   <div class="wrap narrow">
-    {form_shell('indie', 'Indie artist submission: webookshows.com', inner, 'Send submission', privacy='privacy/')}
-    <p class="muted small alt-contact">Prefer email? Write to <a class="js-email" data-show href="{{MAILTO}}">{{EMAIL_TXT}}</a>.</p>
+    {form_shell('indie', 'Indie artist submission: webookshows.com', inner, 'Send submission', privacy='privacy/', to=INDIE_EMAIL)}
+    <p class="muted small alt-contact">Prefer email? Write to <a href="mailto:{e(INDIE_EMAIL)}">{e(INDIE_EMAIL)}</a>.</p>
   </div>
 </section>'''
     page(
@@ -437,6 +443,7 @@ def get_booked():
         body,
         0,
         canon_path='get-booked',
+        contact_email=INDIE_EMAIL,
     )
 
 def about():

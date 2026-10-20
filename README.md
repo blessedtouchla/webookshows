@@ -18,9 +18,9 @@ Artist photos go in `img/artists/<slug>.jpg`, using the photos from the tour one
 
 ## Forms
 
-The booking, roster, and indie-artist forms post to FormSubmit (`https://formsubmit.co/ajax/<CONTACT_EMAIL>`). The **first submission sends an activation email** to the contact inbox. Click "Activate Form" once, and after that submissions arrive normally. If the service can't be reached, the form falls back to a pre-filled `mailto:`.
+Book a show and the roster form post to FormSubmit (`https://formsubmit.co/ajax/<CONTACT_EMAIL>`). The **first submission sends an activation email** to that inbox. Click "Activate Form" once, and after that submissions arrive normally. If the service can't be reached, the form falls back to a pre-filled `mailto:`.
 
-`/get-booked` (`get-booked.html`) is for independent artists who want paid bookings. It is separate from the headliner roster. The only public link is the footer line "Get booked (indie artists)".
+`/get-booked` (`get-booked.html`) is for independent artists who want paid bookings. It is separate from the headliner roster. The only public link is the footer line "Get booked (indie artists)". That form, its mailto fallback, and the contact lines on that page use `INDIE_CONTACT_EMAIL` instead of `CONTACT_EMAIL`. FormSubmit activation is per address, so the indie inbox needs its own one-time confirmation.
 
 ## Policy
 

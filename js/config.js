@@ -4,8 +4,12 @@
    ========================================================================== */
 window.WBS_CONFIG = {
   // Public contact email. Shown on the About/contact page and used as the
-  // form destination. (Set Sept 2026.)
+  // destination for Book a show and the roster form. (Set Sept 2026.)
   CONTACT_EMAIL: "webookshows@yahoo.com",
+
+  // Indie Get booked form only (get-booked.html). Not used by the other forms.
+  // FormSubmit must be activated once for this address before mail is delivered.
+  INDIE_CONTACT_EMAIL: "emailplaiground@gmail.com",
 
   // Bookings phone line (approved Sept 2026). Leave CONTACT_PHONE "" to hide it everywhere.
   BOOKING_CONTACT_NAME: "Herman Watson",
